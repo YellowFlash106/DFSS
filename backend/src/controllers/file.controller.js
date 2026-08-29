@@ -34,4 +34,21 @@ const getFiles = async (req, res) => {
     }
 }
 
-module.exports = { createFile, getFiles };
+const finalizeFile = async (req, res) => {
+    try {
+        const { fileId } = req.body;
+
+        const file = await prisma.file.update({
+            where: { id: parseInt(fileId) },
+            data: { isFinalized: true,
+                status: 'READY'
+             },
+        });
+
+        res.json({ message: "File finalized successfully", file });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
+module.exports = { createFile, getFiles, finalizeFile };

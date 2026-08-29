@@ -54,6 +54,24 @@ enum Role {
   ADMIN
 }
 
+
+model Chunk {
+  id        String   @id @default(uuid())
+  fileId    String
+  index     Int
+  path      String
+  size      Int
+  uploaded  Boolean  @default(true)
+
+  file      File     @relation(fields: [fileId], references: [id])
+  replicas  ChunkReplica[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, index]) // prevents duplicate chunk
+}
+
+
 model File {
   id        String   @id @default(uuid())
   name      String
@@ -68,5 +86,20 @@ model File {
   user      User     @relation(fields: [userId], references: [id])
   folder    Folder?  @relation(fields: [folderId], references: [id])
 
+  chunks    Chunk[]
+
   createdAt DateTime @default(now())
+}
+
+model ChunkReplica {
+  id        String   @id @default(uuid())
+  chunkId   String
+  node      String
+  path      String
+
+  chunk     Chunk    @relation(fields: [chunkId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([chunkId, node])
 }
