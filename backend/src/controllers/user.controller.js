@@ -1,27 +1,26 @@
 const prisma = require("../utils/prisma");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
 
-const getUser = async (req, res) => {
-  try {
-    const userId = req.user.userId;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+const getUser = asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
 
-    res.json({ user });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  if (!user) {
+    throw new AppError('User not found', 404);
   }
-};
+
+  res.json({ user });
+});
 
 module.exports = { getUser };
