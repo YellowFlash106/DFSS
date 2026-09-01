@@ -14,6 +14,7 @@ const adminRoutes = require('./src/routes/admin.routes');
 const folderRoutes = require('./src/routes/folder.routes');
 const filerRoutes = require('./src/routes/file.routes');
 const uploadRoutes = require('./src/routes/upload.routes');
+const shareRoutes = require('./src/routes/share.routes');
 
 
 app.use('/api/auth', authRoutes);
@@ -22,6 +23,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/files', filerRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/share', shareRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

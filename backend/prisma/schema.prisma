@@ -20,6 +20,7 @@ model User {
   sessions  Session[]
   files     File[]
   folders   Folder[]
+  share     Share[]
 
   createdAt DateTime  @default(now())
 }
@@ -54,7 +55,6 @@ enum Role {
   ADMIN
 }
 
-
 model Chunk {
   id        String   @id @default(uuid())
   fileId    String
@@ -71,7 +71,6 @@ model Chunk {
   @@unique([fileId, index]) // prevents duplicate chunk
 }
 
-
 model File {
   id        String   @id @default(uuid())
   name      String
@@ -81,12 +80,15 @@ model File {
   userId    String
   folderId  String?
 
-  status    String   @default("UPLOADING") 
+  status    String   @default("UPLOADING")
+  publicToken String? @unique 
 
   user      User     @relation(fields: [userId], references: [id])
   folder    Folder?  @relation(fields: [folderId], references: [id])
 
   chunks    Chunk[]
+  share     Share[]
+
 
   createdAt DateTime @default(now())
 }
@@ -102,4 +104,18 @@ model ChunkReplica {
   createdAt DateTime @default(now())
 
   @@unique([chunkId, node])
+}
+
+model Share {
+  id        String   @id @default(uuid())
+  fileId    String
+  userId    String   // who gets access
+  permission String  // "READ" | "WRITE"
+
+  file      File     @relation(fields: [fileId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, userId])
 }

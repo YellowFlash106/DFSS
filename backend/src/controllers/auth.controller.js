@@ -84,7 +84,14 @@ const logoutUser = asyncHandler(async (req, res) => {
         throw new AppError('Authorization header missing', 401);
     }
 
-    const token = authHeader.split(" ")[1];
+    const normalizedHeader = authHeader.trim();
+    const match = normalizedHeader.match(/^Bearer\s+(.+)$/i);
+    const token = match ? match[1].trim() : normalizedHeader.trim();
+
+    if (!token || token === "Bearer") {
+        throw new AppError('Authorization header malformed', 401);
+    }
+
     await prisma.session.deleteMany({
         where: { token },
     });
