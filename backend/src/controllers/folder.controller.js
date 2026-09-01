@@ -1,6 +1,5 @@
 const prisma = require("../utils/prisma");
 const asyncHandler = require("../utils/asyncHandler");
-const AppError = require("../utils/AppError");
 
 const createFolder = asyncHandler(async (req, res) => {
     const { name, parentId } = req.body;

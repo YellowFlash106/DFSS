@@ -1,5 +1,6 @@
-const prisma = require("../prisma");
+const prisma = require("../utils/prisma");
 const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
 const authenticate = async (req, res, next) => {
   try {
@@ -11,13 +12,13 @@ const authenticate = async (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     const session = await prisma.session.findUnique({
       where: { token },
     });
 
-    if (!session) {
+    if (!session || session.expiresAt <= new Date()) {
       return res.status(401).json({ message: "Session expired" });
     }
 

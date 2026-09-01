@@ -6,7 +6,7 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/chunks');
     },
     filename: function (req, file, cb) {
-        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.uniqueName);
+        const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname);
 
         cb(null, uniqueName);
     },

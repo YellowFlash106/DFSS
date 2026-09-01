@@ -5,7 +5,9 @@ const { createFile, getFiles, finalizeFile, getFileById } = require("../controll
 const authenticate = require("../middleware/auth.middleware");
 const rateLimiter = require("../middleware/rateLimiter");
 
-router.post("/uploads", uploadFile);
+router.use(authenticate);
+
+router.post("/upload", createFile);
 router.get("/get-files", getFiles);
 router.get("/get-file/:fileId", rateLimiter, getFileById);
 router.post("/finalize-file", finalizeFile);

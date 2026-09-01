@@ -5,6 +5,15 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
+const createSession = (token, userId) => prisma.session.create({
+    data: {
+        token,
+        userId,
+        expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
+    },
+});
 
 const registerUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -26,6 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 
     const token = jwt.sign({ userId: newUser.id, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
+    await createSession(token, newUser.id);
 
     res.status(201).json({
         message: "User registered successfully",
@@ -55,6 +65,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    await createSession(token, user.id);
 
     res.status(201).json({
         token,

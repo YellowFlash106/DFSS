@@ -17,10 +17,10 @@ const uploadRoutes = require('./src/routes/upload.routes');
 
 
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/folder', folderRoutes);
-app.use('/api/file', filerRoutes);
+app.use('/api/folders', folderRoutes);
+app.use('/api/files', filerRoutes);
 app.use('/api/upload', uploadRoutes);
 
 app.get('/', (req, res) => {

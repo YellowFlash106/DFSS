@@ -5,7 +5,7 @@ const prisma = require('../utils/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 
-const { getPrimaryNode, getNode } = require('../utils/storageNode');
+const { getPrimaryNode, getReplicaNode } = require('../utils/storageNode');
 
 const uploadChunk = asyncHandler(async (req, res) => {
     const { fileId, chunkIndex } = req.body;
@@ -15,23 +15,24 @@ const uploadChunk = asyncHandler(async (req, res) => {
         throw new AppError('No file uploaded', 400);
     }
 
-    if (file.userId !== req.user.userId) {
-        throw new AppError('Unauthorized', 403);
-    }
-
     const dbFile = await prisma.file.findUnique({
         where: { id: fileId },
     });
 
-    if (dbFile.userId !== req.user.userId) {
+    if (!dbFile || dbFile.userId !== req.user.userId) {
         throw new AppError('Forbidden', 403);
+    }
+
+    const index = Number(chunkIndex);
+    if (!Number.isInteger(index) || index < 0) {
+        throw new AppError('Invalid chunk index', 400);
     }
 
     let chunk = await prisma.chunk.findUnique({
         where: {
-            fileId_chunkIndex: {
+            fileId_index: {
                 fileId: fileId,
-                chunkIndex: Number(chunkIndex),
+                index,
             }
         }
     });
@@ -40,32 +41,39 @@ const uploadChunk = asyncHandler(async (req, res) => {
         chunk = await prisma.chunk.create({
             data: {
                 fileId: fileId,
-                chunkIndex: Number(chunkIndex),
+                index,
                 path: "",
                 size: file.size,
             },
         });
     }
 
-    const primary = getPrimaryNode(fileId, chunkIndex);
-    const nodes = getNode(primary);
+    const primary = getPrimaryNode(fileId, index);
+    const nodes = getReplicaNode(primary);
+    const replicas = [];
 
     for (const node of nodes) {
         const nodePath = path.join(
             "storage",
             node,
-            `${fileId}_${chunkIndex}`
+            `${fileId}_${index}`
         );
 
+        fs.mkdirSync(path.dirname(nodePath), { recursive: true });
         fs.copyFileSync(file.path, nodePath);
 
-        await prisma.chunk.update({
-            data: {
-                chunkId: chunk.id,
-                node,
-                path: nodePath
-            },
-        });
+        if (node === primary) {
+            await prisma.chunk.update({
+                where: { id: chunk.id },
+                data: { path: nodePath, size: file.size },
+            });
+        } else {
+            replicas.push({ chunkId: chunk.id, node, path: nodePath });
+        }
+    }
+
+    if (replicas.length > 0) {
+        await prisma.chunkReplica.createMany({ data: replicas, skipDuplicates: true });
     }
 
     fs.unlinkSync(file.path);

@@ -8,7 +8,7 @@ const createFile = asyncHandler(async (req, res) => {
         data: {
             name,
             size,
-            mimetype,
+            mimeType: mimetype,
             folderId: folderId || null,
             userId: req.user.userId,
         },
@@ -31,7 +31,7 @@ const finalizeFile = asyncHandler(async (req, res) => {
     const { fileId } = req.body;
 
     const file = await prisma.file.update({
-        where: { id: parseInt(fileId) },
+        where: { id: fileId },
         data: {
             isFinalized: true,
             status: 'READY'
@@ -45,7 +45,7 @@ const getFileById = asyncHandler(async (req, res) => {
     const { fileId } = req.params;
     const userId = req.user.userId;
 
-    const cacheKey = `file:${fileId}`;
+    const cacheKey = `file:${userId}:${fileId}`;
 
     const cached = await redis.get(cacheKey);
     if (cached) {
@@ -53,7 +53,7 @@ const getFileById = asyncHandler(async (req, res) => {
     }
     const file = await prisma.file.findFirst({
         where: {
-            id: parseInt(fileId),
+            id: fileId,
             userId: userId,
         },
     });
