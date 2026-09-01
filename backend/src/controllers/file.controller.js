@@ -1,6 +1,6 @@
 const prisma = require("../utils/prisma");
 const asyncHandler = require("../utils/asyncHandler");
-const AppError = require("../utils/AppError");
+const redis = require("../utils/redis");
 
 const createFile = asyncHandler(async (req, res) => {
     const { name, size, mimetype, folderId } = req.body;
@@ -41,4 +41,31 @@ const finalizeFile = asyncHandler(async (req, res) => {
     res.json({ message: "File finalized successfully", file });
 });
 
-module.exports = { createFile, getFiles, finalizeFile };
+const getFileById = asyncHandler(async (req, res) => {
+    const { fileId } = req.params;
+    const userId = req.user.userId;
+
+    const cacheKey = `file:${fileId}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+        return res.json({  source: 'cache', file: JSON.parse(cached) });
+    }
+    const file = await prisma.file.findFirst({
+        where: {
+            id: parseInt(fileId),
+            userId: userId,
+        },
+    });
+    if (!file || file.userId !== userId) {
+        throw new Error("File not found or access denied");
+    }
+
+    await redis.set(cacheKey, JSON.stringify(file), {
+        EX: 60,  
+    });
+
+    res.json({ source: 'database', file });
+})
+
+module.exports = { createFile, getFiles, finalizeFile, getFileById };
