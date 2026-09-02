@@ -24,6 +24,10 @@ const authenticate = asyncHandler(async (req, res, next) => {
     where: { token },
   });
 
+  if (new Date(session.expiresAt) < new Date()) {
+    return res.status(401).json({ message: "Session expired" });
+  }
+
   if (!session || session.expiresAt <= new Date()) {
     throw new Error("Session expired");
   }
